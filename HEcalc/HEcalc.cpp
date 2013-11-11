@@ -3,10 +3,13 @@
 #include <NTL/lzz_pXFactoring.h>
 
 #include <iostream>
+#include <fstream>
 #include <stack>
 #include <string>
 #include <stdlib.h>
 #include <time.h>
+#include <string>
+#include <typeinfo>
 
 using namespace std;
 //stack<int> theStack;
@@ -20,25 +23,26 @@ void setupHELib();
 bool isOp(string token);
 void evaluate(char op);
 bool is_end(char c);
-void hecalc(char* input);
+void hecalc(string input);
 
 void greeting() {
 	cout << "Welcome to the homomorphic encryption calculator" << endl;
 	cout << "Enter expressions in Reverse Polish Notation" << endl;
-	cout << "Enter anything else other than numbers or + or * to quit" << endl;
 }
 
-void hecalc(char* input) {
+void hecalc(string input) {
 	// Local variables
 	string token;
-
+	
 	// setup FHE
     setupHELib();
     EncryptedArray ea(*context, G); 
 
 	// Main loop
 	int i = 0;
+	
 	while(!is_end(input[i])) {
+	//while(0){
 		
 		token = input[i++];
 		if(token[0] == 'q') {
@@ -125,6 +129,33 @@ void setupHELib() {
    addSome1DMatrices(*secretKey); // compute key-switching matrices that we need
 }
 
+int read_dataset(string* input)
+{
+    cout << "reading file\t";
+
+    int n; 
+    ifstream infile;
+    infile.open("dataset.txt");
+    
+    infile >> n;
+    cout << "n: " << n << "\n";
+     
+    int i = 0;
+    while(i != n)
+    {
+        infile >> input[i++];
+        cout << "input: " << input[i - 1] << "\n";
+    }
+    
+    return n;
+}
+
+void print_timers(clock_t* timers, int n)
+{
+    for(int i = 0; i < n; i++)
+        cout << (double)timers[i] / ((double)CLOCKS_PER_SEC) << endl;	  
+}
+
 //if char c is a number or * or +, it is good to go
 bool is_end(char c)
 {
@@ -136,14 +167,22 @@ bool is_end(char c)
 int main(int argc, char** argv) {
 	  greeting();
 	  
-	  clock_t init, final;
-	  char* input = new char[1000];
-	  cin >> input;
-
-    init=clock();
-    hecalc(input);
-    final=clock()-init;
-    cout << "time consumed: " << (double)final / ((double)CLOCKS_PER_SEC) << "s" << endl;	  
+	  clock_t init;
+	  string* input;
+	  input = new string[1000];
+	  int n_formula = read_dataset(input);
+	  clock_t* timers = new clock_t[n_formula];
+	  
+	  for(int i = 0; i < n_formula; i++)
+	  {
+	      cout << i << " time, input: " << input[i] << endl;
+        init = clock();
+        hecalc(input[i]);
+        timers[i] = clock()-init;
+    }
+    
+    print_timers(timers, n_formula);
 }
+
 
 
